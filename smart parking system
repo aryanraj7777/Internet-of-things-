@@ -1,0 +1,90 @@
+Smart parking system:
+IOT-based car parking management
+system help in efficient parking space
+utilization only Arduino code and components used.
+
+
+#include <SPI.h>
+#include <Ethernet.h>
+#include <Servo.h>
+
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+IPAddress serverIP(192, 168, 0, 100); // IP address of the server
+EthernetClient client;
+
+Servo servo; // Servo motor for gate control
+
+const int ultrasonicPin = A0; // Ultrasonic sensor pin
+const int ledPin = 13; // LED indicator pin
+
+void setup() {
+  Ethernet.begin(mac);
+  delay(1000);
+  servo.attach(9);
+  pinMode(ultrasonicPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(9600);
+  
+  connectToServer();
+}
+
+void loop() {
+  int distance = getDistance();
+  
+  if (distance >= 0) {
+    if (distance <= 10) {
+      openGate(); // Open the gate if the distance is less than or equal to 10 cm
+    } else {
+      closeGate(); // Close the gate if the distance is greater than 10 cm
+    }
+  }
+  
+  delay(500);
+}
+
+void connectToServer() {
+  if (client.connect(serverIP, 80)) {
+    client.println("GET /parking_status HTTP/1.1");
+    client.println("Host: example.com"); // Replace with your server's hostname
+    client.println("Connection: close");
+    client.println();
+  } else {
+    Serial.println("Failed to connect to server");
+  }
+}
+
+int getDistance() {
+  long duration;
+  int distance;
+  
+  pinMode(ultrasonicPin, OUTPUT);
+  digitalWrite(ultrasonicPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(ultrasonicPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ultrasonicPin, LOW);
+  
+  pinMode(ultrasonicPin, INPUT);
+  duration = pulseIn(ultrasonicPin, HIGH);
+  
+  distance = duration * 0.034 / 2; // Calculate distance in cm
+  
+  Serial.print("Distance: ");
+  Serial.println(distance);
+  
+  return distance;
+}
+
+void openGate() {
+  servo.write(180); // Open the gate by rotating the servo to 180 degrees
+  digitalWrite(ledPin, HIGH); // Turn on the LED indicator
+}
+
+void closeGate() {
+  servo.write(0); // Close the gate by rotating the servo to 0 degrees
+  digitalWrite(ledPin, LOW); // Turn off the LED indicator
+}
+
+
+
+This code continuously measures the distance using an ultrasonic sensor and sends a request to the server to get the parking status. If the distance is less than or equal to 10 cm, indicating a car is present, it opens the gate by rotating the servo motor to 180 degrees and turns on an LED indicator. Otherwise, if the distance is greater than 10 cm, indicating the parking space is empty, it closes the gate by rotating the servo motor to 0 degrees and turns off the LED indicator.
