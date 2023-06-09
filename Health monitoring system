@@ -1,0 +1,146 @@
+Health monitoring system:
+This system allows users to keep track of their body
+vitals like blood pressure, sugar level,
+and heartbeat and remotely send
+the data to healthcare professionals.
+
+
+
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <SoftwareSerial.h>
+#include <LiquidCrystal_I2C.h>
+
+#define BME_SDA A4
+#define BME_SCL A5
+#define HEARTBEAT_SENSOR_PIN A0
+#define BP_SENSOR_PIN A1
+#define SUGAR_SENSOR_PIN A2
+
+Adafruit_BME280 bme;
+SoftwareSerial bluetoothSerial(2, 3); // SoftwareSerial for Bluetooth communication
+LiquidCrystal_I2C lcd(0x27, 16, 2); // I2C LCD module
+
+void setup() {
+  Serial.begin(9600);
+  bluetoothSerial.begin(9600);
+  
+  if (!bme.begin(0x76, &Wire)) {
+    Serial.println("Could not find a valid BME280 sensor, check wiring!");
+    while (1);
+  }
+  
+  lcd.begin(16, 2);
+  lcd.clear();
+  lcd.print("Health Monitor");
+}
+
+void loop() {
+  float temperature = bme.readTemperature();
+  float humidity = bme.readHumidity();
+  float pressure = bme.readPressure() / 100.0;
+  int heartbeat = analogRead(HEARTBEAT_SENSOR_PIN);
+  int bloodPressure = analogRead(BP_SENSOR_PIN);
+  int sugarLevel = analogRead(SUGAR_SENSOR_PIN);
+
+  float voltage = (heartbeat / 1023.0) * 5.0;
+  int bpm = map(voltage, 0.5, 4.5, 40, 200);
+  
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" °C");
+  
+  Serial.print("Humidity: ");
+  Serial.print(humidity);
+  Serial.println(" %");
+  
+  Serial.print("Pressure: ");
+  Serial.print(pressure);
+  Serial.println(" hPa");
+  
+  Serial.print("Heartbeat: ");
+  Serial.print(bpm);
+  Serial.println(" bpm");
+  
+  Serial.print("Blood Pressure: ");
+  Serial.print(bloodPressure);
+  Serial.println(" mmHg");
+  
+  Serial.print("Sugar Level: ");
+  Serial.print(sugarLevel);
+  Serial.println(" mg/dL");
+  
+  sendDataToHealthcare(temperature, humidity, pressure, bpm, bloodPressure, sugarLevel);
+  
+  displayDataOnLCD(temperature, humidity, pressure, bpm, bloodPressure, sugarLevel);
+  
+  delay(2000);
+}
+
+void sendDataToHealthcare(float temperature, float humidity, float pressure, int heartbeat, int bloodPressure, int sugarLevel) {
+  bluetoothSerial.print("Temperature: ");
+  bluetoothSerial.print(temperature);
+  bluetoothSerial.println(" °C");
+  
+  bluetoothSerial.print("Humidity: ");
+  bluetoothSerial.print(humidity);
+  bluetoothSerial.println(" %");
+  
+  bluetoothSerial.print("Pressure: ");
+  bluetoothSerial.print(pressure);
+  bluetoothSerial.println(" hPa");
+  
+  bluetoothSerial.print("Heartbeat: ");
+  bluetoothSerial.print(heartbeat);
+  bluetoothSerial.println(" bpm");
+  
+  bluetoothSerial.print("Blood Pressure: ");
+  bluetoothSerial.print(bloodPressure);
+  bluetoothSerial.println(" mmHg");
+  
+  bluetoothSerial.print("Sugar Level: ");
+  bluetoothSerial.print(sugarLevel);
+  bluetoothSerial.println(" mg/dL");
+}
+
+void displayDataOnLCD(float temperature, float humidity, float pressure, int heartbeat, int bloodPressure, int sugarLevel) {
+  lcd.setCursor(0, 1);
+  lcd.print("T:");
+  lcd.print(temperature);
+  lcd.print("C ");
+  
+  lcd.setCursor(6, 1);
+  lcd.print("H:");
+  lcd.print(heartbeat);
+  lcd.print("bpm");
+  
+  lcd.setCursor(0, 2);
+  lcd.print("P:");
+  lcd.print(pressure);
+  lcd.print("hPa");
+  
+  lcd.setCursor(8, 2);
+  lcd.print("B:");
+  lcd.print(bloodPressure);
+  lcd.print("mmHg");
+  
+  lcd.setCursor(0, 3);
+  lcd.print("S:");
+  lcd.print(sugarLevel);
+  lcd.print("mg/dL");
+}
+
+
+
+This code assumes the use of the BME280 sensor for temperature, humidity, and pressure readings. Additionally, it utilizes analog sensors for heartbeat, blood pressure, and sugar level measurements. Make sure to connect the BME280 sensor's SDA and SCL pins to the Arduino's A4 and A5 pins, respectively. Connect the heartbeat sensor to analog pin A0, the blood pressure sensor to analog pin A1, and the sugar level sensor to analog pin A2.
+
+The code initializes the BME280 sensor, Bluetooth communication via SoftwareSerial, and the LCD module. In the loop() function, it reads the sensor data and sends it to healthcare professionals via Bluetooth using sendDataToHealthcare() function. It also displays the sensor data on the LCD using displayDataOnLCD() function.
+
+Please note that you need to pair your Arduino with a Bluetooth module (e.g., HC-05 or HC-06) and connect it to the Arduino's RX and TX pins accordingly.
+
+Ensure that you have installed the necessary libraries (Adafruit_Sensor, Adafruit_BME280, SoftwareSerial, and LiquidCrystal_I2C) for the BME280 sensor, Bluetooth communication, and LCD module.
+
+
+
+
