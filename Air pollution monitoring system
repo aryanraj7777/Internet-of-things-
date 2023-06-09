@@ -1,0 +1,78 @@
+Air pollution monitoring system :
+The system consists of air sensors that
+sense the presence of harmful gases
+and compounds in the air Arduino code
+and components used
+
+
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <SoftwareSerial.h>
+
+#define BME_SDA A4
+#define BME_SCL A5
+#define GAS_SENSOR_RX 2
+#define GAS_SENSOR_TX 3
+
+Adafruit_BME280 bme;
+SoftwareSerial gasSerial(GAS_SENSOR_RX, GAS_SENSOR_TX); // SoftwareSerial for gas sensor
+
+void setup() {
+  Serial.begin(9600);
+  gasSerial.begin(9600);
+  
+  if (!bme.begin(0x76, &Wire)) {
+    Serial.println("Could not find a valid BME280 sensor, check wiring!");
+    while (1);
+  }
+  
+  // Initialize gas sensor
+  gasSerial.write("AT+ADDRESS=0\r\n"); // Set the address of the gas sensor to 0
+  delay(500);
+  gasSerial.write("AT+UART=9600\r\n"); // Set the baud rate of the gas sensor to 9600
+  delay(500);
+  gasSerial.write("AT+OUTPUT=IEC\r\n"); // Set the output format to IEC
+  delay(500);
+  gasSerial.write("AT+DATALOG=ON\r\n"); // Enable data logging
+  delay(500);
+}
+
+void loop() {
+  float temperature = bme.readTemperature();
+  float humidity = bme.readHumidity();
+  float pressure = bme.readPressure() / 100.0;
+
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" °C");
+  
+  Serial.print("Humidity: ");
+  Serial.print(humidity);
+  Serial.println(" %");
+  
+  Serial.print("Pressure: ");
+  Serial.print(pressure);
+  Serial.println(" hPa");
+
+  if (gasSerial.available()) {
+    String gasData = gasSerial.readStringUntil('\n');
+    gasData.trim();
+    Serial.println(gasData);
+  }
+  
+  delay(2000);
+}
+
+
+This code assumes the use of the BME280 sensor for temperature, humidity, and pressure readings, as well as a gas sensor connected via SoftwareSerial. Make sure to connect the BME280 sensor's SDA and SCL pins to the Arduino's A4 and A5 pins, respectively. Connect the gas sensor's RX and TX pins to the Arduino's digital pins 2 and 3, respectively.
+
+The code initializes the BME280 sensor and the gas sensor. In the loop() function, it reads the temperature, humidity, and pressure values from the BME280 sensor and displays them on the serial monitor. It also reads the gas sensor's data and displays it on the serial monitor.
+
+Please note that the gas sensor used in this example may have specific AT commands for configuration. Adjust the gas sensor initialization code and AT commands as per the documentation provided with your gas sensor module.
+
+Ensure that you have installed the necessary libraries (Adafruit_Sensor and Adafruit_BME280) for the BME280 sensor. For the gas sensor, please refer to its documentation for any specific libraries required.
+
+
+
+
